@@ -1,4 +1,4 @@
-<!-- index.html (Final UI Polish for Buttons) -->
+<!-- index.html (Updated with Voice Selection UI) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,27 +8,23 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
         :root {
-            --bg-color: #121212;
-            --primary-color: #fca311; /* Orange/Yellow for primary buttons */
-            --secondary-color: #28a745; /* Green for recreate button */
-            --text-color: #e0e0e0;
-            --card-color: #1e1e1e;
-            --input-bg: #2a2a2a;
-            --border-color: #333;
+            --bg-color: #121212; --primary-color: #fca311; --secondary-color: #28a745;
+            --text-color: #e0e0e0; --card-color: #1e1e1e; --input-bg: #2a2a2a; --border-color: #333;
         }
         body, html { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-color); }
-        .center-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; text-align: center; }
+        .center-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; text-align: left; }
         .initial-form-box { width: 90%; max-width: 600px; padding: 2rem; background-color: var(--card-color); border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); }
-        h1 { color: var(--primary-color); margin-bottom: 1.5rem; }
-        #prompt-form input { width: calc(100% - 2rem); padding: 1rem; font-size: 1rem; background-color: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-color); margin-bottom: 1.5rem; }
+        h1 { color: var(--primary-color); margin-bottom: 1.5rem; text-align: center; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; }
+        #prompt-form input, #prompt-form select { width: 100%; box-sizing: border-box; padding: 1rem; font-size: 1rem; background-color: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-color); }
+        .form-actions { text-align: center; }
         #generateBtn { background-color: var(--primary-color); color: var(--bg-color); padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: 700; border: none; border-radius: 8px; }
-        
-        #loader { margin-top: 2rem; display: none; }
+        #loader { margin-top: 2rem; display: none; text-align: center; }
         #progress-container, #progress-container-recreate { width: 100%; background-color: var(--border-color); border-radius: 8px; margin: 1.5rem 0; overflow: hidden; }
         #progress-bar, #progress-bar-recreate { width: 0%; height: 20px; background-color: var(--primary-color); transition: width 0.4s ease-in-out; }
         #progress-text { color: #aaa; font-size: 0.9rem; }
-        #error-message { color: #e74c3c; margin-top: 1rem; }
-        
+        #error-message { color: #e74c3c; margin-top: 1rem; text-align: center; }
         #editor-container { display: none; width: 100%; max-width: 1400px; margin: 2rem auto; padding: 1rem; box-sizing: border-box; }
         .editor-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr auto; gap: 1.5rem; height: calc(100vh - 4rem); }
         .panel { background-color: var(--card-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; overflow: hidden; display: flex; flex-direction: column; }
@@ -38,30 +34,19 @@
         #video-preview { width: 100%; border-radius: 8px; margin: auto 0; }
         #actions-panel { grid-column: 1 / 2; grid-row: 2 / 3; }
         #prompt-panel { grid-column: 2 / 3; grid-row: 1 / 3; }
-        
-        /* --- REFINED Action Button Styles --- */
-        .action-buttons { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
-        .action-btn {
-            display: inline-block;
-            padding: 0.8rem 1.5rem;
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-            border: none;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            text-align: center;
-        }
+        .action-buttons { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; }
+        .action-group { flex-grow: 1; }
+        .action-group label { display: block; font-size: 0.9rem; margin-bottom: 0.5rem; }
+        .action-group select { width: 100%; box-sizing: border-box; padding: 0.8rem; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 8px; }
+        .action-btn { display: inline-block; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: 700; cursor: pointer; border: none; border-radius: 8px; transition: all 0.3s ease; text-decoration: none; text-align: center; }
         .action-btn:hover { opacity: 0.9; transform: translateY(-2px); }
         .btn-primary { background-color: var(--primary-color); color: var(--bg-color); }
         .btn-secondary { background-color: var(--secondary-color); color: white; }
         #loader-recreate { display: none; margin-top: 1rem; }
         #progress-bar-recreate { background-color: var(--secondary-color); }
-        
         .edit-group { margin-bottom: 1rem; }
         .edit-group label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 0.25rem; }
-        .edit-group textarea, .edit-group input { width: 95%; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.5rem; font-family: 'Inter', sans-serif; font-size: 0.9rem; }
+        .edit-group textarea { width: 95%; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.5rem; font-family: 'Inter', sans-serif; font-size: 0.9rem; }
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
         .modal-content { background-color: var(--card-color); margin: auto; padding: 2rem; border: 1px solid var(--border-color); border-radius: 12px; width: 80%; max-width: 800px; }
         #prompt-display { height: 400px; }
@@ -74,7 +59,22 @@
         <div class="initial-form-box">
             <h1>AI Prompt Video Generator</h1>
             <div id="form-container">
-                <form id="prompt-form"><input type="text" id="businessIdeaInput" placeholder="Enter a business idea..." required><button type="submit" id="generateBtn">Generate Video</button></form>
+                <form id="prompt-form">
+                    <div class="form-group">
+                        <label for="businessIdeaInput">Business Idea</label>
+                        <input type="text" id="businessIdeaInput" placeholder="e.g., Dog Walking Business" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="voice-select">Choose a Voice</label>
+                        <select id="voice-select">
+                            <option value="heart" selected>Heart (Female)</option>
+                            <option value="zac">Zac (Male)</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" id="generateBtn">Generate Video</button>
+                    </div>
+                </form>
             </div>
             <div id="loader"><div id="progress-container"><div id="progress-bar"></div></div><p id="progress-text"></p></div>
             <p id="error-message"></p>
@@ -83,13 +83,23 @@
     <div id="editor-container">
         <div class="editor-grid">
             <div id="video-panel" class="panel"><h2>Preview</h2><video id="video-preview" controls></video></div>
-            <div id="actions-panel" class="panel"><h2>Actions</h2><div class="action-buttons">
-                <!-- Buttons now use classes for consistent styling -->
-                <button id="recreateBtn" class="action-btn btn-secondary">Recreate Video</button>
-                <a id="downloadBtn" href="#" download="presentation.mp4" class="action-btn btn-primary">Download</a>
-                <button id="copyPromptBtn" class="action-btn btn-primary">Copy Prompt</button>
-                <button id="startOverBtn" class="action-btn btn-primary">Start Over</button>
-            </div><div id="loader-recreate" style="display: none;"><p>Recreating, please wait...</p><div id="progress-container-recreate"><div id="progress-bar-recreate"></div></div><p id="progress-text-recreate"></p></div></div>
+            <div id="actions-panel" class="panel">
+                <h2>Actions</h2>
+                <div class="action-buttons">
+                    <div class="action-group">
+                        <label for="voice-select-editor">Voice</label>
+                        <select id="voice-select-editor">
+                            <option value="heart">Heart (Female)</option>
+                            <option value="zac">Zac (Male)</option>
+                        </select>
+                    </div>
+                    <button id="recreateBtn" class="action-btn btn-secondary">Recreate</button>
+                    <a id="downloadBtn" href="#" download="presentation.mp4" class="action-btn btn-primary">Download</a>
+                    <button id="copyPromptBtn" class="action-btn btn-primary">Copy Prompt</button>
+                    <button id="startOverBtn" class="action-btn btn-primary">Start Over</button>
+                </div>
+                <div id="loader-recreate"><p>Recreating, please wait...</p><div id="progress-container-recreate"><div id="progress-bar-recreate"></div></div><p id="progress-text-recreate"></p></div>
+            </div>
             <div id="prompt-panel" class="panel"><h2>Edit Prompt & Voiceover</h2><div id="editor-content" class="panel-content"></div></div>
         </div>
     </div>
@@ -97,7 +107,6 @@
         <div class="modal-content"><h2>Final AI Prompt</h2><div class="edit-group"><textarea id="prompt-display" readonly></textarea></div><div class="modal-actions"><button id="copyToClipboardBtn">Copy to Clipboard</button><button id="closeModalBtn">Close</button></div></div>
     </div>
     <script>
-        // --- JavaScript (No changes needed, included for completeness) ---
         const initialContainer = document.getElementById('initial-container');
         const editorContainer = document.getElementById('editor-container');
         const loader = document.getElementById('loader');
@@ -115,54 +124,26 @@
         document.getElementById('closeModalBtn').addEventListener('click', () => copyModal.style.display = 'none');
         document.getElementById('copyToClipboardBtn').addEventListener('click', copyPromptToClipboard);
 
-        function handleSse(url, isRecreation) {
-            const bar = document.getElementById(isRecreation ? 'progress-bar-recreate' : 'progress-bar');
-            const text = document.getElementById(isRecreation ? 'progress-text-recreate' : 'progress-text');
-            const eventSource = new EventSource(url);
-            eventSource.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                if (data.status === 'processing') {
-                    bar.style.width = `${data.percentage}%`;
-                    text.textContent = data.message;
-                } else if (data.status === 'complete') {
-                    videoPreview.src = data.videoUrl + `?t=${new Date().getTime()}`;
-                    downloadBtn.href = data.videoUrl;
-                    if (!isRecreation) {
-                        currentData = data.generatedData;
-                        buildEditorUI();
-                        initialContainer.style.display = 'none';
-                        editorContainer.style.display = 'block';
-                    } else {
-                        document.getElementById('loader-recreate').style.display = 'none';
-                    }
-                    eventSource.close();
-                } else if (data.status === 'error') {
-                    document.getElementById('error-message').textContent = data.message;
-                    eventSource.close();
-                }
-            };
-            eventSource.onerror = () => {
-                document.getElementById('error-message').textContent = 'A connection error occurred.';
-                eventSource.close();
-            };
-        }
-
         function handleInitialGeneration(e) {
             e.preventDefault();
             const businessIdea = document.getElementById('businessIdeaInput').value;
+            const selectedVoice = document.getElementById('voice-select').value;
             if (!businessIdea.trim()) return;
             formContainer.style.display = 'none';
             loader.style.display = 'block';
-            handleSse(`/generate-presentation?businessIdea=${encodeURIComponent(businessIdea)}`, false);
+            handleSse(`/generate-presentation?businessIdea=${encodeURIComponent(businessIdea)}&voice=${selectedVoice}`, false);
         }
 
         async function handleRecreation() {
             document.getElementById('loader-recreate').style.display = 'block';
             const editedData = collectEditedData();
+            const selectedVoice = document.getElementById('voice-select-editor').value;
+            const payload = { ...editedData, voice: selectedVoice };
+
             const response = await fetch('/recreate-presentation', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(editedData)
+                body: JSON.stringify(payload)
             });
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
@@ -177,6 +158,19 @@
             push();
         }
 
+        function handleSse(url, isRecreation) {
+            const eventSource = new EventSource(url);
+            eventSource.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleSseMessage(data, isRecreation);
+                if (data.status === 'complete' || data.status === 'error') eventSource.close();
+            };
+            eventSource.onerror = () => {
+                document.getElementById('error-message').textContent = 'A connection error occurred.';
+                eventSource.close();
+            };
+        }
+
         function handleSseMessage(data, isRecreation) {
             const bar = document.getElementById(isRecreation ? 'progress-bar-recreate' : 'progress-bar');
             const text = document.getElementById(isRecreation ? 'progress-text-recreate' : 'progress-text');
@@ -188,12 +182,15 @@
                 downloadBtn.href = data.videoUrl;
                 if (!isRecreation) {
                     currentData = data.generatedData;
+                    document.getElementById('voice-select-editor').value = document.getElementById('voice-select').value;
                     buildEditorUI();
                     initialContainer.style.display = 'none';
                     editorContainer.style.display = 'block';
                 } else {
                     document.getElementById('loader-recreate').style.display = 'none';
                 }
+            } else if (data.status === 'error') {
+                document.getElementById('error-message').textContent = data.message;
             }
         }
 

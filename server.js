@@ -1,4 +1,4 @@
-// server.js (Corrected to match the original prompt structure exactly)
+// server.js (Updated with Voice Selection)
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
@@ -30,14 +30,15 @@ app.get('/presentation', (req, res) => res.sendFile(path.join(__dirname, 'presen
 
 app.get('/generate-presentation', async (req, res) => {
     const sseStream = new SseStream(res);
-    const { businessIdea } = req.query;
+    // Read voice from query parameters
+    const { businessIdea, voice } = req.query;
     if (!businessIdea) {
         sseStream.send({ status: 'error', message: 'Business idea is required.' });
         sseStream.close();
         return;
     }
     try {
-        const { generatedData } = await runGeneration(sseStream, { businessIdea });
+        const { generatedData } = await runGeneration(sseStream, { businessIdea, voice });
         sseStream.send({ status: 'complete', message: 'Video generation complete!', percentage: 100, videoUrl: '/presentation.mp4', generatedData });
     } catch (error) {
         console.error('Initial generation error:', error);
@@ -49,14 +50,15 @@ app.get('/generate-presentation', async (req, res) => {
 
 app.post('/recreate-presentation', async (req, res) => {
     const sseStream = new SseStream(res);
-    const editedData = req.body;
+    // Separate voice from the rest of the data in the POST body
+    const { voice, ...editedData } = req.body;
     if (!editedData) {
         sseStream.send({ status: 'error', message: 'No edited data received.' });
         sseStream.close();
         return;
     }
     try {
-        await runGeneration(sseStream, { editedData });
+        await runGeneration(sseStream, { editedData, voice });
         sseStream.send({ status: 'complete', message: 'Video recreated successfully!', percentage: 100, videoUrl: '/presentation.mp4' });
     } catch (error) {
         console.error('Recreation error:', error);
@@ -80,7 +82,7 @@ class SseStream {
     close() { this.res.end(); }
 }
 
-async function runGeneration(sseStream, { businessIdea, editedData }) {
+async function runGeneration(sseStream, { businessIdea, editedData, voice }) {
     const audioDir = path.join(publicDir, 'audio');
     await fs.rm(publicDir, { recursive: true, force: true }).catch(() => {});
     await fs.mkdir(audioDir, { recursive: true });
@@ -102,9 +104,10 @@ async function runGeneration(sseStream, { businessIdea, editedData }) {
     
     const basePercentage = businessIdea ? 20 : 5;
     sseStream.send({ status: 'processing', message: `[${3 + progressOffset - 2}/7] Generating voiceover audio...`, percentage: basePercentage + 25 });
+    // Pass the selected voice down to the audio generation function
     const audioFilePaths = await Promise.all(generatedData.voiceoverScript.map(async (script, i) => {
         const audioPath = path.join(audioDir, `audio_${i}.mp3`);
-        await generateAudio(script.text, audioPath);
+        await generateAudio(script.text, audioPath, voice); // Pass voice here
         return audioPath;
     }));
 
@@ -124,7 +127,49 @@ async function runGeneration(sseStream, { businessIdea, editedData }) {
     return { generatedData };
 }
 
-// --- FINAL Gemini Prompt matching original reference ---
+// --- Gemini Prompt (Unchanged as per your request) ---
+async function generatePromptAndScript(businessIdea) { /* Your provided function here... */ }
+
+// --- UPDATED: generateAudio function to handle voice selection ---
+async function generateAudio(text, outputPath, voiceSelection = 'heart') {
+    // Configuration object for different voice models
+    const voiceConfig = {
+        heart: {
+            model: "hexgrad/Kokoro-82M",
+            voice: "af_heart"
+        },
+        zac: {
+            model: "canopylabs/orpheus-3b-0.1-ft",
+            voice: "zac"
+        }
+    };
+
+    const config = voiceConfig[voiceSelection] || voiceConfig.heart; // Default to 'heart' if invalid
+
+    const response = await fetch("https://api.deepinfra.com/v1/openai/audio/speech", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.DEEPINFRA_API_KEY}` },
+        body: JSON.stringify({
+            model: config.model,
+            input: text,
+            voice: config.voice,
+            response_format: "mp3",
+        }),
+    });
+    if (!response.ok) { throw new Error(`DeepInfra API failed: ${await response.text()}`); }
+    const arrayBuffer = await response.arrayBuffer();
+    await fs.writeFile(outputPath, Buffer.from(arrayBuffer));
+}
+
+// --- Other helper functions (Unchanged) ---
+async function recordPresentation(videoPath) { /* ... */ }
+function concatenateAudio(audioFiles, outputPath) { /* ... */ }
+function mergeVideoAndAudio(videoPath, audioPath, outputPath) { /* ... */ }
+
+app.listen(PORT, () => console.log(`Server is running on http://localhost:${PORT}`));
+
+
+// --- PASTE UNCHANGED FUNCTIONS HERE FOR COMPLETENESS ---
 async function generatePromptAndScript(businessIdea) {
     const prompt = `
         You are an AI assistant creating a structured prompt and voiceover script for a tutorial video.
@@ -187,9 +232,6 @@ async function generatePromptAndScript(businessIdea) {
     const cleanedJsonString = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
     return JSON.parse(cleanedJsonString);
 }
-
-
-// --- Helper functions ---
 async function recordPresentation(videoPath) {
     const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
@@ -202,16 +244,6 @@ async function recordPresentation(videoPath) {
     await page.waitForFunction(() => document.title === 'presentation-finished', { timeout: 300000 });
     await recorder.stop();
     await browser.close();
-}
-async function generateAudio(text, outputPath) {
-    const response = await fetch("https://api.deepinfra.com/v1/openai/audio/speech", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.DEEPINFRA_API_KEY}` },
-        body: JSON.stringify({ model: "hexgrad/Kokoro-82M", input: text, voice: "af_heart", response_format: "mp3" }),
-    });
-    if (!response.ok) { throw new Error(`DeepInfra API failed: ${await response.text()}`); }
-    const arrayBuffer = await response.arrayBuffer();
-    await fs.writeFile(outputPath, Buffer.from(arrayBuffer));
 }
 function concatenateAudio(audioFiles, outputPath) {
     return new Promise((resolve, reject) => {
@@ -228,5 +260,3 @@ function mergeVideoAndAudio(videoPath, audioPath, outputPath) {
             .on('end', () => resolve()).save(outputPath);
     });
 }
-
-app.listen(PORT, () => console.log(`Server is running on http://localhost:${PORT}`));
