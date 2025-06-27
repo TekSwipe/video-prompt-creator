@@ -1,0 +1,170 @@
+<!-- index.html (Corrected) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Prompt Video Generator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        :root {
+            --bg-color: #121212;
+            --primary-color: #fca311;
+            --text-color: #e0e0e0;
+            --card-color: #1e1e1e;
+            --input-bg: #2a2a2a;
+        }
+        body, html {
+            margin: 0; padding: 0; font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color); color: var(--text-color);
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; text-align: center;
+        }
+        .container {
+            width: 90%; max-width: 600px; padding: 2rem;
+            background-color: var(--card-color); border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        h1 { color: var(--primary-color); margin-bottom: 1.5rem; }
+        #prompt-form input {
+            width: calc(100% - 2rem); padding: 1rem; font-size: 1rem;
+            background-color: var(--input-bg); border: 1px solid #444;
+            border-radius: 8px; color: var(--text-color); margin-bottom: 1.5rem;
+        }
+        #prompt-form input:focus { outline: none; border-color: var(--primary-color); }
+        button {
+            padding: 1rem 2rem; font-size: 1rem; font-weight: 500; cursor: pointer;
+            border: none; border-radius: 8px; transition: all 0.3s ease;
+        }
+        #generateBtn { background-color: var(--primary-color); color: var(--bg-color); }
+        #generateBtn:hover { opacity: 0.9; transform: translateY(-2px); }
+        #resetBtn { background-color: #444; color: var(--text-color); margin-left: 1rem; }
+
+        #loader { display: none; margin-top: 2rem; }
+        #progress-container {
+            width: 100%; background-color: #333; border-radius: 8px;
+            margin: 1.5rem 0; overflow: hidden;
+        }
+        #progress-bar {
+            width: 0%; height: 20px; background-color: var(--primary-color);
+            transition: width 0.4s ease-in-out;
+        }
+        #progress-text { color: #aaa; font-size: 0.9rem; }
+
+        #results { display: none; margin-top: 2rem; }
+        #previewVideo {
+            width: 100%; border-radius: 8px; margin-bottom: 1.5rem;
+            border: 1px solid #444;
+        }
+        #downloadBtn {
+            display: inline-block; text-decoration: none; padding: 1rem 2rem;
+            font-size: 1rem; font-weight: 500; border-radius: 8px;
+            background-color: #28a745; color: white;
+        }
+        #error-message { color: #e74c3c; margin-top: 1rem; display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="form-container">
+            <h1>AI Prompt Video Generator</h1>
+            <form id="prompt-form">
+                <input type="text" id="businessIdeaInput" placeholder="Enter a business idea..." required>
+                <button type="submit" id="generateBtn">Generate Video</button>
+            </form>
+        </div>
+
+        <div id="loader">
+            <h2>Generating your video...</h2>
+            <div id="progress-container">
+                <div id="progress-bar"></div>
+            </div>
+            <p id="progress-text">Initializing...</p>
+        </div>
+
+        <div id="results">
+            <h2>Your Video is Ready!</h2>
+            <video id="previewVideo" controls></video>
+            <a href="#" id="downloadBtn" download="presentation.mp4">Download Video</a>
+            <button id="resetBtn">Create Another</button>
+        </div>
+        <p id="error-message"></p>
+    </div>
+
+    <script>
+        const formContainer = document.getElementById('form-container');
+        const promptForm = document.getElementById('prompt-form');
+        const loader = document.getElementById('loader');
+        const results = document.getElementById('results');
+        const previewVideo = document.getElementById('previewVideo');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const errorMessage = document.getElementById('error-message');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+
+        promptForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const businessIdea = document.getElementById('businessIdeaInput').value;
+            if (!businessIdea.trim()) {
+                showError('Please enter a business idea.');
+                return;
+            }
+
+            formContainer.style.display = 'none';
+            results.style.display = 'none';
+            errorMessage.style.display = 'none';
+            loader.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressText.textContent = 'Initializing...';
+
+            const encodedBusinessIdea = encodeURIComponent(businessIdea);
+            const eventSource = new EventSource(`/generate-presentation?businessIdea=${encodedBusinessIdea}`);
+
+            eventSource.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+
+                if (data.status === 'processing') {
+                    progressBar.style.width = `${data.percentage}%`;
+                    progressText.textContent = data.message;
+                } 
+                else if (data.status === 'complete') {
+                    progressBar.style.width = '100%';
+                    progressText.textContent = data.message;
+                    previewVideo.src = data.videoUrl + `?t=${new Date().getTime()}`;
+                    downloadBtn.href = data.videoUrl;
+                    loader.style.display = 'none';
+                    results.style.display = 'block';
+                    eventSource.close();
+                }
+                else if (data.status === 'error') {
+                    showError(data.message);
+                    resetUI();
+                    eventSource.close();
+                }
+            };
+
+            eventSource.onerror = (e) => {
+                showError('A connection error occurred. Please check the server console.');
+                resetUI();
+                eventSource.close();
+            };
+        });
+
+        resetBtn.addEventListener('click', resetUI);
+
+        function resetUI() {
+            loader.style.display = 'none';
+            results.style.display = 'none';
+            formContainer.style.display = 'block';
+            document.getElementById('businessIdeaInput').value = '';
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            loader.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
