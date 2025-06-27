@@ -20,8 +20,8 @@ Follow these simple steps to get the project running.
 **1. Clone the Repository**
 
 ```bash
-git clone https://github.com/your-username/ai-prompt-video-generator.git
-cd ai-prompt-video-generator
+git clone https://github.com/TekSwipe/video-prompt-creator.git
+cd video-prompt-creator
 ```
 
 **2. Install Dependencies**
@@ -43,7 +43,8 @@ Create a new file named `.env` in the root of the project folder and add your AP
 GEMINI_API_KEY="YOUR_GOOGLE_AI_STUDIO_API_KEY"
 
 # Your API key from DeepInfra
-DEEPINFRA_API_KEY="YOUR_DEEPINFRA_API_KEY"```
+DEEPINFRA_API_KEY="YOUR_DEEPINFRA_API_KEY"
+```
 
 ---
 
