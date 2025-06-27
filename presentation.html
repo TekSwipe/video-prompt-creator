@@ -1,195 +1,132 @@
-<!-- presentation.html (Final Version with Predictive Sync) -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>presentation-active</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
-        
-        :root {
-            --prompt-bg: #000000;
-            --prompt-text: #FFFFFF;
-            --prompt-highlight: #fca311;
-        }
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--prompt-bg);
-            color: var(--prompt-text);
-            font-family: 'Inter', sans-serif; 
-            font-size: 28px;
-            overflow: hidden;
-            line-height: 1.6;
-        }
-        #prompt-container {
-            padding: 80px; 
-            height: calc(100vh - 160px);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        .prompt-line {
-            opacity: 0;
-            transform: translateY(15px);
-            transition: opacity 0.4s ease-out, transform 0.4s ease-out;
-            margin-bottom: 0.8em; 
-            white-space: pre-wrap;
-        }
-        .prompt-line.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .highlight {
-            color: var(--prompt-text);
-            font-weight: 500;
-            transition: color 0.4s ease-in-out;
-        }
-        .highlight.active {
-            color: var(--prompt-highlight);
-        }
-        .cursor {
-            display: inline-block;
-            width: 15px;
-            height: 1.2em;
-            background-color: var(--prompt-highlight);
-            margin-left: 8px;
-            animation: blink 1.2s step-end infinite;
-            vertical-align: bottom;
-        }
-        @keyframes blink {
-            from, to { background-color: transparent; }
-            50% { background-color: var(--prompt-highlight); }
-        }
-    </style>
-</head>
-<body>
-    <div id="prompt-container"></div>
-    <script>
-        const container = document.getElementById('prompt-container');
-
-        async function startPresentation() {
-            try {
-                const data = await (await fetch('/data.json')).json();
-                const { promptLines, highlightedWords, voiceoverScript } = data;
-                const highlightsLookup = createHighlightLookup(highlightedWords);
-
-                for (let i = 0; i < voiceoverScript.length; i++) {
-                    const vo = voiceoverScript[i];
-                    const audio = new Audio(`/audio/audio_${i}.mp3`);
-                    
-                    const { duration } = await getAudioMetadata(audio);
-                    const audioEndPromise = new Promise(resolve => audio.onended = resolve);
-                    
-                    // NEW: Schedule animations before playing audio
-                    scheduleAnimationsForSegment(vo.appliesToLines, promptLines, highlightsLookup, duration);
-
-                    // Now play the audio
-                    audio.play().catch(e => console.error("Audio play failed:", e));
-
-                    // Wait for the audio (and all its scheduled animations) to finish
-                    await audioEndPromise;
-                    await delay(400); // Pause between segments
-                }
-
-                document.title = 'presentation-finished';
-                
-            } catch (error) {
-                console.error("Presentation Error:", error);
-                container.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
-                document.title = 'presentation-finished';
+<!-- presentation.html (Updated for <highlight> tags) -->
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>presentation-active</title>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+            :root {
+                --prompt-bg: #000000;
+                --prompt-text: #FFFFFF;
+                --prompt-highlight: #fca311;
             }
-        }
-
-        // --- NEW: Predictive Scheduling Logic ---
-        function scheduleAnimationsForSegment(lineIndexes, allLines, highlightsLookup, audioDuration) {
-            let totalChars = 0;
-            lineIndexes.forEach(index => {
-                if (allLines[index]) totalChars += allLines[index].length;
-            });
-
-            // Use 95% of audio duration for a tighter fit
-            const timePerChar = totalChars > 0 ? (audioDuration * 0.95) / totalChars : 0;
-            
-            let cumulativeDelay = 0; // This is the scheduled start time for each line
-
-            for (const lineIndex of lineIndexes) {
-                if (allLines[lineIndex]) {
-                    const lineText = allLines[lineIndex];
-                    
-                    // Schedule this line to appear at the 'cumulativeDelay' mark
-                    setTimeout(() => {
-                        const lineElement = createLineElement(lineText, highlightsLookup.get(lineIndex), lineIndex);
-                        container.appendChild(lineElement);
+            body, html {
+                margin: 0; padding: 0; width: 100%; height: 100%;
+                background-color: var(--prompt-bg); color: var(--prompt-text);
+                font-family: 'Inter', sans-serif; font-size: 28px;
+                overflow: hidden; line-height: 1.6;
+            }
+            #prompt-container {
+                padding: 80px; height: calc(100vh - 160px);
+                display: flex; flex-direction: column; justify-content: center;
+            }
+            .prompt-line {
+                opacity: 0; transform: translateY(15px);
+                transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+                margin-bottom: 0.8em; white-space: pre-wrap;
+            }
+            .prompt-line.visible { opacity: 1; transform: translateY(0); }
+            /* Style the <highlight> tag directly */
+            highlight {
+                color: var(--prompt-text); font-weight: 500;
+                transition: color 0.4s ease-in-out;
+            }
+            highlight.active { color: var(--prompt-highlight); }
+            .cursor {
+                display: inline-block; width: 15px; height: 1.2em;
+                background-color: var(--prompt-highlight); margin-left: 8px;
+                animation: blink 1.2s step-end infinite; vertical-align: bottom;
+            }
+            @keyframes blink {
+                from, to { background-color: transparent; }
+                50% { background-color: var(--prompt-highlight); }
+            }
+        </style>
+    </head>
+    <body>
+        <div id="prompt-container"></div>
+        <script>
+            const container = document.getElementById('prompt-container');
+    
+            async function startPresentation() {
+                try {
+                    const data = await (await fetch('/data.json')).json();
+                    const { promptLines, voiceoverScript } = data; // No longer need highlightedWords
+    
+                    for (let i = 0; i < voiceoverScript.length; i++) {
+                        const vo = voiceoverScript[i];
+                        const audio = new Audio(`/audio/audio_${i}.mp3`);
+                        const { duration } = await getAudioMetadata(audio);
+                        const audioEndPromise = new Promise(resolve => audio.onended = resolve);
                         
-                        // Use a nested timeout to make it visible, ensuring the transition fires
-                        setTimeout(() => {
-                            lineElement.classList.add('visible');
-                        }, 50);
-
-                        // Schedule the highlight to appear after the line is visible
-                        setTimeout(() => {
-                            const highlights = lineElement.querySelectorAll('.highlight');
-                            highlights.forEach(h => h.classList.add('active'));
-                        }, 500); // Highlight delay remains fixed for visual consistency
-                    }, cumulativeDelay);
-
-                    // Increment the scheduler for the next line
-                    cumulativeDelay += lineText.length * timePerChar * 1000;
+                        scheduleAnimationsForSegment(vo.appliesToLines, promptLines, duration);
+                        audio.play().catch(e => console.error("Audio play failed:", e));
+    
+                        await audioEndPromise;
+                        await delay(400);
+                    }
+                    document.title = 'presentation-finished';
+                } catch (error) {
+                    console.error("Presentation Error:", error);
+                    container.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+                    document.title = 'presentation-finished';
                 }
             }
-        }
-
-        // --- Helper Functions (Unchanged) ---
-        function createLineElement(text, wordsToHighlight = [], lineIndex) {
-            const lineEl = document.createElement('div');
-            lineEl.className = 'prompt-line';
-            let finalText = text;
-            if (wordsToHighlight) {
-                wordsToHighlight.forEach(word => {
-                    const regex = new RegExp(escapeRegExp(word), 'g');
-                    finalText = finalText.replace(regex, `<span class="highlight">${word}</span>`);
+    
+            function scheduleAnimationsForSegment(lineIndexes, allLines, audioDuration) {
+                let totalChars = 0;
+                lineIndexes.forEach(index => {
+                    if (allLines[index]) totalChars += allLines[index].replace(/<\/?highlight>/g, '').length;
+                });
+    
+                const timePerChar = totalChars > 0 ? (audioDuration * 0.95) / totalChars : 0;
+                let cumulativeDelay = 0;
+    
+                for (const lineIndex of lineIndexes) {
+                    if (allLines[lineIndex]) {
+                        const lineText = allLines[lineIndex];
+                        setTimeout(() => {
+                            const lineElement = createLineElement(lineText, lineIndex);
+                            container.appendChild(lineElement);
+                            
+                            setTimeout(() => lineElement.classList.add('visible'), 50);
+                            setTimeout(() => {
+                                // Find <highlight> tags and activate them
+                                lineElement.querySelectorAll('highlight').forEach(h => h.classList.add('active'));
+                            }, 500);
+                        }, cumulativeDelay);
+                        cumulativeDelay += lineText.replace(/<\/?highlight>/g, '').length * timePerChar * 1000;
+                    }
+                }
+            }
+    
+            function createLineElement(textWithTags, lineIndex) {
+                const lineEl = document.createElement('div');
+                lineEl.className = 'prompt-line';
+                lineEl.innerHTML = textWithTags; // The HTML parser handles the <highlight> tags
+                
+                if (lineIndex === 0) {
+                    const cursorEl = document.createElement('span');
+                    cursorEl.className = 'cursor';
+                    lineEl.appendChild(cursorEl);
+                }
+                return lineEl;
+            }
+    
+            function getAudioMetadata(audio) { /* ... unchanged ... */ }
+            function delay(ms) { /* ... unchanged ... */ }
+            window.onload = startPresentation;
+    
+            // Unchanged helpers for completeness
+            function getAudioMetadata(audio) {
+                return new Promise(resolve => {
+                    if (audio.readyState >= 1) { resolve({ duration: audio.duration }); }
+                    else { audio.onloadedmetadata = () => resolve({ duration: audio.duration }); }
                 });
             }
-            lineEl.innerHTML = finalText;
-            if (lineIndex === 0) {
-                const cursorEl = document.createElement('span');
-                cursorEl.className = 'cursor';
-                lineEl.appendChild(cursorEl);
-            }
-            return lineEl;
-        }
-
-        function createHighlightLookup(highlightedWords) {
-            const lookup = new Map();
-            for (const hl of highlightedWords) {
-                lookup.set(hl.lineIndex, hl.words);
-            }
-            return lookup;
-        }
-
-        function getAudioMetadata(audio) {
-            return new Promise(resolve => {
-                if (audio.readyState >= 1) {
-                    resolve({ duration: audio.duration });
-                } else {
-                    audio.onloadedmetadata = () => resolve({ duration: audio.duration });
-                }
-            });
-        }
-        
-        function delay(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-
-        function escapeRegExp(string) {
-            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        }
-
-        window.onload = startPresentation;
-    </script>
-</body>
-</html>
+            function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+        </script>
+    </body>
+    </html>

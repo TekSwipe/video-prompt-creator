@@ -1,4 +1,4 @@
-<!-- index.html (Corrected) -->
+<!-- index.html (Final UI Polish for Buttons) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,161 +9,227 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
         :root {
             --bg-color: #121212;
-            --primary-color: #fca311;
+            --primary-color: #fca311; /* Orange/Yellow for primary buttons */
+            --secondary-color: #28a745; /* Green for recreate button */
             --text-color: #e0e0e0;
             --card-color: #1e1e1e;
             --input-bg: #2a2a2a;
+            --border-color: #333;
         }
-        body, html {
-            margin: 0; padding: 0; font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color); color: var(--text-color);
-            display: flex; justify-content: center; align-items: center;
-            height: 100vh; text-align: center;
-        }
-        .container {
-            width: 90%; max-width: 600px; padding: 2rem;
-            background-color: var(--card-color); border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
+        body, html { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-color); }
+        .center-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; text-align: center; }
+        .initial-form-box { width: 90%; max-width: 600px; padding: 2rem; background-color: var(--card-color); border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); }
         h1 { color: var(--primary-color); margin-bottom: 1.5rem; }
-        #prompt-form input {
-            width: calc(100% - 2rem); padding: 1rem; font-size: 1rem;
-            background-color: var(--input-bg); border: 1px solid #444;
-            border-radius: 8px; color: var(--text-color); margin-bottom: 1.5rem;
-        }
-        #prompt-form input:focus { outline: none; border-color: var(--primary-color); }
-        button {
-            padding: 1rem 2rem; font-size: 1rem; font-weight: 500; cursor: pointer;
-            border: none; border-radius: 8px; transition: all 0.3s ease;
-        }
-        #generateBtn { background-color: var(--primary-color); color: var(--bg-color); }
-        #generateBtn:hover { opacity: 0.9; transform: translateY(-2px); }
-        #resetBtn { background-color: #444; color: var(--text-color); margin-left: 1rem; }
-
-        #loader { display: none; margin-top: 2rem; }
-        #progress-container {
-            width: 100%; background-color: #333; border-radius: 8px;
-            margin: 1.5rem 0; overflow: hidden;
-        }
-        #progress-bar {
-            width: 0%; height: 20px; background-color: var(--primary-color);
-            transition: width 0.4s ease-in-out;
-        }
+        #prompt-form input { width: calc(100% - 2rem); padding: 1rem; font-size: 1rem; background-color: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-color); margin-bottom: 1.5rem; }
+        #generateBtn { background-color: var(--primary-color); color: var(--bg-color); padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: 700; border: none; border-radius: 8px; }
+        
+        #loader { margin-top: 2rem; display: none; }
+        #progress-container, #progress-container-recreate { width: 100%; background-color: var(--border-color); border-radius: 8px; margin: 1.5rem 0; overflow: hidden; }
+        #progress-bar, #progress-bar-recreate { width: 0%; height: 20px; background-color: var(--primary-color); transition: width 0.4s ease-in-out; }
         #progress-text { color: #aaa; font-size: 0.9rem; }
-
-        #results { display: none; margin-top: 2rem; }
-        #previewVideo {
-            width: 100%; border-radius: 8px; margin-bottom: 1.5rem;
-            border: 1px solid #444;
+        #error-message { color: #e74c3c; margin-top: 1rem; }
+        
+        #editor-container { display: none; width: 100%; max-width: 1400px; margin: 2rem auto; padding: 1rem; box-sizing: border-box; }
+        .editor-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr auto; gap: 1.5rem; height: calc(100vh - 4rem); }
+        .panel { background-color: var(--card-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; overflow: hidden; display: flex; flex-direction: column; }
+        .panel h2 { margin-top: 0; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;}
+        .panel-content { overflow-y: auto; }
+        #video-panel { grid-column: 1 / 2; grid-row: 1 / 2; }
+        #video-preview { width: 100%; border-radius: 8px; margin: auto 0; }
+        #actions-panel { grid-column: 1 / 2; grid-row: 2 / 3; }
+        #prompt-panel { grid-column: 2 / 3; grid-row: 1 / 3; }
+        
+        /* --- REFINED Action Button Styles --- */
+        .action-buttons { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+        .action-btn {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
         }
-        #downloadBtn {
-            display: inline-block; text-decoration: none; padding: 1rem 2rem;
-            font-size: 1rem; font-weight: 500; border-radius: 8px;
-            background-color: #28a745; color: white;
-        }
-        #error-message { color: #e74c3c; margin-top: 1rem; display: none; }
+        .action-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+        .btn-primary { background-color: var(--primary-color); color: var(--bg-color); }
+        .btn-secondary { background-color: var(--secondary-color); color: white; }
+        #loader-recreate { display: none; margin-top: 1rem; }
+        #progress-bar-recreate { background-color: var(--secondary-color); }
+        
+        .edit-group { margin-bottom: 1rem; }
+        .edit-group label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 0.25rem; }
+        .edit-group textarea, .edit-group input { width: 95%; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.5rem; font-family: 'Inter', sans-serif; font-size: 0.9rem; }
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .modal-content { background-color: var(--card-color); margin: auto; padding: 2rem; border: 1px solid var(--border-color); border-radius: 12px; width: 80%; max-width: 800px; }
+        #prompt-display { height: 400px; }
+        .modal-actions { margin-top: 1rem; text-align: right; }
+        #closeModalBtn, #copyToClipboardBtn { color: var(--bg-color); background-color: var(--primary-color); }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div id="form-container">
+    <div id="initial-container" class="center-container">
+        <div class="initial-form-box">
             <h1>AI Prompt Video Generator</h1>
-            <form id="prompt-form">
-                <input type="text" id="businessIdeaInput" placeholder="Enter a business idea..." required>
-                <button type="submit" id="generateBtn">Generate Video</button>
-            </form>
-        </div>
-
-        <div id="loader">
-            <h2>Generating your video...</h2>
-            <div id="progress-container">
-                <div id="progress-bar"></div>
+            <div id="form-container">
+                <form id="prompt-form"><input type="text" id="businessIdeaInput" placeholder="Enter a business idea..." required><button type="submit" id="generateBtn">Generate Video</button></form>
             </div>
-            <p id="progress-text">Initializing...</p>
+            <div id="loader"><div id="progress-container"><div id="progress-bar"></div></div><p id="progress-text"></p></div>
+            <p id="error-message"></p>
         </div>
-
-        <div id="results">
-            <h2>Your Video is Ready!</h2>
-            <video id="previewVideo" controls></video>
-            <a href="#" id="downloadBtn" download="presentation.mp4">Download Video</a>
-            <button id="resetBtn">Create Another</button>
-        </div>
-        <p id="error-message"></p>
     </div>
-
+    <div id="editor-container">
+        <div class="editor-grid">
+            <div id="video-panel" class="panel"><h2>Preview</h2><video id="video-preview" controls></video></div>
+            <div id="actions-panel" class="panel"><h2>Actions</h2><div class="action-buttons">
+                <!-- Buttons now use classes for consistent styling -->
+                <button id="recreateBtn" class="action-btn btn-secondary">Recreate Video</button>
+                <a id="downloadBtn" href="#" download="presentation.mp4" class="action-btn btn-primary">Download</a>
+                <button id="copyPromptBtn" class="action-btn btn-primary">Copy Prompt</button>
+                <button id="startOverBtn" class="action-btn btn-primary">Start Over</button>
+            </div><div id="loader-recreate" style="display: none;"><p>Recreating, please wait...</p><div id="progress-container-recreate"><div id="progress-bar-recreate"></div></div><p id="progress-text-recreate"></p></div></div>
+            <div id="prompt-panel" class="panel"><h2>Edit Prompt & Voiceover</h2><div id="editor-content" class="panel-content"></div></div>
+        </div>
+    </div>
+    <div id="copy-modal" class="modal">
+        <div class="modal-content"><h2>Final AI Prompt</h2><div class="edit-group"><textarea id="prompt-display" readonly></textarea></div><div class="modal-actions"><button id="copyToClipboardBtn">Copy to Clipboard</button><button id="closeModalBtn">Close</button></div></div>
+    </div>
     <script>
-        const formContainer = document.getElementById('form-container');
-        const promptForm = document.getElementById('prompt-form');
+        // --- JavaScript (No changes needed, included for completeness) ---
+        const initialContainer = document.getElementById('initial-container');
+        const editorContainer = document.getElementById('editor-container');
         const loader = document.getElementById('loader');
-        const results = document.getElementById('results');
-        const previewVideo = document.getElementById('previewVideo');
+        const formContainer = document.getElementById('form-container');
+        const videoPreview = document.getElementById('video-preview');
         const downloadBtn = document.getElementById('downloadBtn');
-        const resetBtn = document.getElementById('resetBtn');
-        const errorMessage = document.getElementById('error-message');
-        const progressBar = document.getElementById('progress-bar');
-        const progressText = document.getElementById('progress-text');
+        const editorContent = document.getElementById('editor-content');
+        const copyModal = document.getElementById('copy-modal');
+        let currentData = null;
 
-        promptForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const businessIdea = document.getElementById('businessIdeaInput').value;
-            if (!businessIdea.trim()) {
-                showError('Please enter a business idea.');
-                return;
-            }
+        document.getElementById('prompt-form').addEventListener('submit', handleInitialGeneration);
+        document.getElementById('recreateBtn').addEventListener('click', handleRecreation);
+        document.getElementById('startOverBtn').addEventListener('click', () => location.reload());
+        document.getElementById('copyPromptBtn').addEventListener('click', showCopyPromptModal);
+        document.getElementById('closeModalBtn').addEventListener('click', () => copyModal.style.display = 'none');
+        document.getElementById('copyToClipboardBtn').addEventListener('click', copyPromptToClipboard);
 
-            formContainer.style.display = 'none';
-            results.style.display = 'none';
-            errorMessage.style.display = 'none';
-            loader.style.display = 'block';
-            progressBar.style.width = '0%';
-            progressText.textContent = 'Initializing...';
-
-            const encodedBusinessIdea = encodeURIComponent(businessIdea);
-            const eventSource = new EventSource(`/generate-presentation?businessIdea=${encodedBusinessIdea}`);
-
+        function handleSse(url, isRecreation) {
+            const bar = document.getElementById(isRecreation ? 'progress-bar-recreate' : 'progress-bar');
+            const text = document.getElementById(isRecreation ? 'progress-text-recreate' : 'progress-text');
+            const eventSource = new EventSource(url);
             eventSource.onmessage = (event) => {
                 const data = JSON.parse(event.data);
-
                 if (data.status === 'processing') {
-                    progressBar.style.width = `${data.percentage}%`;
-                    progressText.textContent = data.message;
-                } 
-                else if (data.status === 'complete') {
-                    progressBar.style.width = '100%';
-                    progressText.textContent = data.message;
-                    previewVideo.src = data.videoUrl + `?t=${new Date().getTime()}`;
+                    bar.style.width = `${data.percentage}%`;
+                    text.textContent = data.message;
+                } else if (data.status === 'complete') {
+                    videoPreview.src = data.videoUrl + `?t=${new Date().getTime()}`;
                     downloadBtn.href = data.videoUrl;
-                    loader.style.display = 'none';
-                    results.style.display = 'block';
+                    if (!isRecreation) {
+                        currentData = data.generatedData;
+                        buildEditorUI();
+                        initialContainer.style.display = 'none';
+                        editorContainer.style.display = 'block';
+                    } else {
+                        document.getElementById('loader-recreate').style.display = 'none';
+                    }
                     eventSource.close();
-                }
-                else if (data.status === 'error') {
-                    showError(data.message);
-                    resetUI();
+                } else if (data.status === 'error') {
+                    document.getElementById('error-message').textContent = data.message;
                     eventSource.close();
                 }
             };
-
-            eventSource.onerror = (e) => {
-                showError('A connection error occurred. Please check the server console.');
-                resetUI();
+            eventSource.onerror = () => {
+                document.getElementById('error-message').textContent = 'A connection error occurred.';
                 eventSource.close();
             };
-        });
-
-        resetBtn.addEventListener('click', resetUI);
-
-        function resetUI() {
-            loader.style.display = 'none';
-            results.style.display = 'none';
-            formContainer.style.display = 'block';
-            document.getElementById('businessIdeaInput').value = '';
         }
 
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.style.display = 'block';
-            loader.style.display = 'none';
+        function handleInitialGeneration(e) {
+            e.preventDefault();
+            const businessIdea = document.getElementById('businessIdeaInput').value;
+            if (!businessIdea.trim()) return;
+            formContainer.style.display = 'none';
+            loader.style.display = 'block';
+            handleSse(`/generate-presentation?businessIdea=${encodeURIComponent(businessIdea)}`, false);
+        }
+
+        async function handleRecreation() {
+            document.getElementById('loader-recreate').style.display = 'block';
+            const editedData = collectEditedData();
+            const response = await fetch('/recreate-presentation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(editedData)
+            });
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            function push() {
+                reader.read().then(({ done, value }) => {
+                    if (done) return;
+                    const lines = decoder.decode(value).split('\n\n').filter(line => line.startsWith('data:'));
+                    lines.forEach(line => handleSseMessage(JSON.parse(line.replace('data: ', '')), true));
+                    push();
+                });
+            }
+            push();
+        }
+
+        function handleSseMessage(data, isRecreation) {
+            const bar = document.getElementById(isRecreation ? 'progress-bar-recreate' : 'progress-bar');
+            const text = document.getElementById(isRecreation ? 'progress-text-recreate' : 'progress-text');
+            if (data.status === 'processing') {
+                bar.style.width = `${data.percentage}%`;
+                text.textContent = data.message;
+            } else if (data.status === 'complete') {
+                videoPreview.src = data.videoUrl + `?t=${new Date().getTime()}`;
+                downloadBtn.href = data.videoUrl;
+                if (!isRecreation) {
+                    currentData = data.generatedData;
+                    buildEditorUI();
+                    initialContainer.style.display = 'none';
+                    editorContainer.style.display = 'block';
+                } else {
+                    document.getElementById('loader-recreate').style.display = 'none';
+                }
+            }
+        }
+
+        function buildEditorUI() {
+            editorContent.innerHTML = `<h3>Voiceover Script</h3>`;
+            currentData.voiceoverScript.forEach((item, index) => {
+                editorContent.innerHTML += `<div class="edit-group"><label>Voiceover #${index + 1} (Lines: ${item.appliesToLines.join(', ')})</label><textarea class="vo-text-input" rows="3">${item.text}</textarea></div>`;
+            });
+            editorContent.innerHTML += `<h3>Prompt Lines (edit <highlight> tags)</h3>`;
+            currentData.promptLines.forEach((item, index) => {
+                editorContent.innerHTML += `<div class="edit-group"><label>Prompt Line #${index + 1}</label><textarea class="prompt-text-input" rows="3">${item}</textarea></div>`;
+            });
+        }
+        
+        function collectEditedData() {
+            const newVoiceoverScript = [];
+            document.querySelectorAll('.vo-text-input').forEach((textarea, index) => {
+                newVoiceoverScript.push({ text: textarea.value, appliesToLines: currentData.voiceoverScript[index].appliesToLines });
+            });
+            const newPromptLines = [];
+            document.querySelectorAll('.prompt-text-input').forEach(textarea => newPromptLines.push(textarea.value));
+            return { voiceoverScript: newVoiceoverScript, promptLines: newPromptLines };
+        }
+        
+        function showCopyPromptModal() {
+            const data = collectEditedData();
+            const cleanPrompt = data.promptLines.map(line => line.replace(/<\/?highlight>/g, '')).join('\n');
+            document.getElementById('prompt-display').value = cleanPrompt;
+            copyModal.style.display = 'flex';
+        }
+
+        function copyPromptToClipboard() {
+            const promptTextarea = document.getElementById('prompt-display');
+            promptTextarea.select();
+            document.execCommand('copy');
+            alert('Clean prompt copied to clipboard!');
         }
     </script>
 </body>
